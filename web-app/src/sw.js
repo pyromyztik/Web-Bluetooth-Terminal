@@ -1,6 +1,6 @@
 importScripts('https://storage.googleapis.com/workbox-cdn/releases/7.3.0/workbox-sw.js');
 
-const VERSION = '1.4.0';
+const VERSION = '1.4.1';
 const FILES = [
   'css/normalize.css',
   'css/styles.css',
@@ -16,6 +16,9 @@ const FILES = [
   'index.html',
   'site.webmanifest',
 ];
+
+self.skipWaiting();
+workbox.core.clientsClaim();
 
 workbox.precaching.precacheAndRoute(FILES.map((url) => ({url, revision: VERSION})));
 workbox.routing.setDefaultHandler(new workbox.strategies.NetworkFirst());

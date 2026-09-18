@@ -3,8 +3,8 @@
   "version": "1.4.0",
   "description": "Progressive Web Application for serial communication with your own Bluetooth Low Energy (Smart) devices",
   "engines": {
-    "node": "22",
-    "npm": "10"
+    "node": ">=22",
+    "npm": ">=10"
   },
   "scripts": {
     "build": "npm run build:clean && npm run build:html && npm run build:js && npm run build:public && npm run build:styles",

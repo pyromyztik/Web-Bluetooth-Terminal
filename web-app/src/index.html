@@ -9,6 +9,7 @@
   <meta name="description"
     content="Progressive Web Application for serial communication with your own Bluetooth Low Energy (Smart) devices" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#ffffff" id="theme-color-meta" />
 
   <title>Web Bluetooth Terminal</title>
 
@@ -25,6 +26,23 @@
   <link rel="stylesheet" href="css/normalize.css" />
   <link rel="stylesheet" href="css/styles.css" />
 
+  <script>
+    (() => {
+      try {
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = savedTheme === 'dark' || (!savedTheme && prefersDark) ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', theme);
+        const meta = document.getElementById('theme-color-meta');
+        if (meta) {
+          meta.setAttribute('content', theme === 'dark' ? '#121212' : '#ffffff');
+        }
+      } catch {
+        // Ignore storage errors.
+      }
+    })();
+  </script>
+
 </head>
 
 <body>
@@ -38,6 +56,9 @@
         </button>
         <button id="disconnect" type="button" aria-label="Disconnect">
           <i class="material-icons">bluetooth_disabled</i>
+        </button>
+        <button id="theme-toggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode">
+          <i class="material-icons">dark_mode</i>
         </button>
       </div>
     </div>
