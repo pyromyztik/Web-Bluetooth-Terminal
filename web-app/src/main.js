@@ -2,10 +2,28 @@
 const deviceNameLabel = document.getElementById('device-name');
 const connectButton = document.getElementById('connect');
 const disconnectButton = document.getElementById('disconnect');
+const exportButton = document.getElementById('export');
 const themeToggleButton = document.getElementById('theme-toggle');
 const terminalContainer = document.getElementById('terminal');
 const messageForm = document.getElementById('message-form');
 const messageInput = document.getElementById('message-input');
+
+// Log history and timestamps.
+const logHistory = [];
+
+const formatTime = (date = new Date(), withMs = false) => {
+  const pad = (num, length = 2) => String(num).padStart(length, '0');
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  const seconds = pad(date.getSeconds());
+
+  if (withMs) {
+    const ms = pad(date.getMilliseconds(), 3);
+    return `${hours}:${minutes}:${seconds}.${ms}`;
+  }
+
+  return `${hours}:${minutes}:${seconds}`;
+};
 
 // Theme management.
 const getStoredTheme = () => {
@@ -58,7 +76,23 @@ const terminalAutoScrollingLimit = terminalContainer.offsetHeight / 2;
 let isTerminalAutoScrolling = true;
 
 const logToTerminal = (message, type = '') => {
-  terminalContainer.insertAdjacentHTML('beforeend', `<div${type && ` class="${type}"`}>${message}</div>`);
+  const now = new Date();
+  const timeStr = formatTime(now);
+  const timeWithMs = formatTime(now, true);
+
+  logHistory.push({
+    timestamp: timeWithMs,
+    type,
+    message: String(message),
+  });
+
+  const entryClass = type ? ` class="${type}"` : '';
+  const entryHtml = `<div${entryClass}>` +
+    `<span class="content">${message}</span>` +
+    `<span class="timestamp">[${timeStr}]</span>` +
+    `</div>`;
+
+  terminalContainer.insertAdjacentHTML('beforeend', entryHtml);
 
   if (isTerminalAutoScrolling) {
     const scrollTop = terminalContainer.scrollHeight - terminalContainer.offsetHeight;
@@ -95,6 +129,29 @@ bluetoothTerminal.onLog((logLevel, method, message) => {
   logToTerminal(message);
 });
 
+// Connection state management.
+const updateConnectionState = (connected) => {
+  if (connected) {
+    const deviceName = bluetoothTerminal.getDeviceName() || defaultDeviceName;
+    deviceNameLabel.textContent = deviceName;
+    connectButton.hidden = true;
+    disconnectButton.hidden = false;
+    disconnectButton.setAttribute('title', `Disconnect from ${deviceName}`);
+  } else {
+    deviceNameLabel.textContent = defaultDeviceName;
+    connectButton.hidden = false;
+    disconnectButton.hidden = true;
+  }
+};
+
+bluetoothTerminal.onConnect(() => {
+  updateConnectionState(true);
+});
+
+bluetoothTerminal.onDisconnect(() => {
+  updateConnectionState(false);
+});
+
 // Bind event listeners to the UI elements.
 connectButton.addEventListener('click', async () => {
   try {
@@ -103,12 +160,7 @@ connectButton.addEventListener('click', async () => {
     await bluetoothTerminal.connect();
   } catch (error) {
     logToTerminal(error, 'error');
-
-    return;
   }
-
-  // Retrieve the name of the currently connected device.
-  deviceNameLabel.textContent = bluetoothTerminal.getDeviceName() || defaultDeviceName;
 });
 
 disconnectButton.addEventListener('click', () => {
@@ -117,11 +169,7 @@ disconnectButton.addEventListener('click', () => {
     bluetoothTerminal.disconnect();
   } catch (error) {
     logToTerminal(error, 'error');
-
-    return;
   }
-
-  deviceNameLabel.textContent = defaultDeviceName;
 });
 
 messageForm.addEventListener('submit', async (event) => {
@@ -167,4 +215,59 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (ev
 
 // Initialize theme state.
 applyTheme(document.documentElement.getAttribute('data-theme') || getPreferredTheme());
+
+// Export log to text file.
+const exportLog = () => {
+  if (logHistory.length === 0) {
+    logToTerminal('No log entries to export', 'error');
+
+    return;
+  }
+
+  const typePrefixes = {
+    incoming: '[IN] ',
+    outgoing: '[OUT] ',
+    error: '[ERROR] ',
+  };
+
+  const lines = logHistory.map((entry) => {
+    const prefix = typePrefixes[entry.type] || '';
+
+    return `[${entry.timestamp}] ${prefix}${entry.message}`;
+  });
+
+  const deviceName = bluetoothTerminal.getDeviceName() || defaultDeviceName;
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const dateStamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ` +
+    `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+  const header = [
+    'Web Bluetooth Terminal Log',
+    `Device: ${deviceName}`,
+    `Exported: ${dateStamp}`,
+    '='.repeat(60),
+    '',
+  ].join('\r\n');
+
+  const content = header + lines.join('\r\n') + '\r\n';
+  const blob = new Blob([content], {type: 'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+
+  const fileDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_` +
+    `${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+
+  anchor.href = url;
+  anchor.download = `terminal-log-${fileDate}.txt`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
+};
+
+exportButton.addEventListener('click', () => {
+  exportLog();
+});
+
 

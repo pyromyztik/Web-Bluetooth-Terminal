@@ -1,6 +1,6 @@
 importScripts('https://storage.googleapis.com/workbox-cdn/releases/7.3.0/workbox-sw.js');
 
-const VERSION = '1.4.1';
+const VERSION = '1.4.5';
 const FILES = [
   'css/normalize.css',
   'css/styles.css',

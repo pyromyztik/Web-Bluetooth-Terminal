@@ -5,8 +5,11 @@
 
   .name {
     flex-grow: 1;
+    overflow: hidden;
     padding: 0 8px;
+    text-overflow: ellipsis;
     user-select: none;
+    white-space: nowrap;
   }
 
   .buttons {
@@ -14,6 +17,13 @@
 
     button {
       float: left;
+
+      &[hidden] {
+        display: none;
+      }
+    }
+    button:hover {
+      filter: brightness(1.15);
     }
   }
 }

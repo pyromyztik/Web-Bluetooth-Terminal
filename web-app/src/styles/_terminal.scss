@@ -10,9 +10,38 @@
 
   div {
     color: config.$terminal-default-color;
-    line-height: 1;
+    line-height: 1.25;
     padding: 4px 8px;
+    position: relative;
     word-break: break-word;
+
+    .content {
+      word-break: break-word;
+    }
+
+    .timestamp {
+      align-items: center;
+      background: linear-gradient(to right, transparent 0%, config.$background-color 24px);
+      background: linear-gradient(to right, color-mix(in srgb, config.$background-color 0%, transparent) 0%, config.$background-color 24px);
+      bottom: 0;
+      color: config.$hint-color;
+      display: flex;
+      font-size: 0.85em;
+      opacity: 0;
+      padding-left: 28px;
+      padding-right: 8px;
+      pointer-events: none;
+      position: absolute;
+      right: 0;
+      top: 0;
+      transition: opacity 0.15s ease-in-out;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    &:hover .timestamp {
+      opacity: 1;
+    }
 
     &.error {
       color: config.$terminal-error-color;

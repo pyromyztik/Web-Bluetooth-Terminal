@@ -51,11 +51,14 @@
     <div class="toolbar">
       <div id="device-name" class="name">Web Bluetooth Terminal</div>
       <div class="buttons">
-        <button id="connect" type="button" aria-label="Connect">
+        <button id="connect" type="button" aria-label="Connect" title="Connect">
           <i class="material-icons">bluetooth_connected</i>
         </button>
-        <button id="disconnect" type="button" aria-label="Disconnect">
+        <button id="disconnect" type="button" aria-label="Disconnect" title="Disconnect" hidden>
           <i class="material-icons">bluetooth_disabled</i>
+        </button>
+        <button id="export" type="button" aria-label="Export log" title="Export log">
+          <i class="material-icons">file_download</i>
         </button>
         <button id="theme-toggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode">
           <i class="material-icons">dark_mode</i>

@@ -25,6 +25,7 @@ export default defineConfig([
       js,
     },
     rules: {
+      'linebreak-style': 'off',
       'max-len': ['error', {
         code: 120,
       }],
