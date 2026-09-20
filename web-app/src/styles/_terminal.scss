@@ -1,5 +1,18 @@
 @use 'config';
 
+.terminal-view {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  width: 100%;
+
+  &[hidden] {
+    display: none !important;
+  }
+}
+
 .terminal {
   border: 1px solid config.$dividers-color;
   border-width: 1px 0;

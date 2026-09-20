@@ -4,9 +4,14 @@ const connectButton = document.getElementById('connect');
 const disconnectButton = document.getElementById('disconnect');
 const exportButton = document.getElementById('export');
 const themeToggleButton = document.getElementById('theme-toggle');
+const thermalStreamToggleButton = document.getElementById('thermal-stream-toggle');
 const terminalContainer = document.getElementById('terminal');
 const messageForm = document.getElementById('message-form');
 const messageInput = document.getElementById('message-input');
+const terminalView = document.getElementById('terminal-view');
+const viewSwitcher = document.getElementById('view-switcher');
+const tabTerminal = document.getElementById('tab-terminal');
+const tabStream = document.getElementById('tab-stream');
 
 // Log history and timestamps.
 const logHistory = [];
@@ -152,12 +157,98 @@ bluetoothTerminal.onDisconnect(() => {
   updateConnectionState(false);
 });
 
+// Mutually exclusive view mode management: 'terminal' | 'stream'
+let currentViewMode = 'terminal';
+
+const setViewMode = (mode) => {
+  currentViewMode = mode;
+  if (mode === 'stream') {
+    if (terminalView) terminalView.hidden = true;
+    thermalStreamWindow.show();
+    if (tabTerminal) tabTerminal.classList.remove('active');
+    if (tabStream) tabStream.classList.add('active');
+    if (thermalStreamToggleButton) {
+      thermalStreamToggleButton.style.color = '#00e676';
+    }
+  } else {
+    if (terminalView) terminalView.hidden = false;
+    thermalStreamWindow.hide();
+    if (tabTerminal) tabTerminal.classList.add('active');
+    if (tabStream) tabStream.classList.remove('active');
+    if (thermalStreamToggleButton) {
+      thermalStreamToggleButton.style.color = '';
+    }
+  }
+};
+
+// Thermal Camera Stream Window integration.
+const thermalStreamWindow = new ThermalStreamWindow({
+  onLog: (message, type = '') => {
+    logToTerminal(message, type);
+  },
+  onStreamToggleVisibility: (visible) => {
+    if (viewSwitcher) {
+      viewSwitcher.hidden = !visible;
+    }
+    if (thermalStreamToggleButton) {
+      thermalStreamToggleButton.hidden = !visible;
+    }
+    if (visible) {
+      setViewMode('stream');
+    } else {
+      setViewMode('terminal');
+    }
+  },
+  onClose: () => {
+    setViewMode('terminal');
+  },
+});
+
+if (tabTerminal) {
+  tabTerminal.addEventListener('click', () => {
+    setViewMode('terminal');
+  });
+}
+
+if (tabStream) {
+  tabStream.addEventListener('click', () => {
+    setViewMode('stream');
+  });
+}
+
+if (thermalStreamToggleButton) {
+  thermalStreamToggleButton.addEventListener('click', () => {
+    setViewMode(currentViewMode === 'stream' ? 'terminal' : 'stream');
+  });
+}
+
+thermalStreamWindow.client.onStatus((connected, message) => {
+  if (connected) {
+    const devName = (thermalStreamWindow.client.device && thermalStreamWindow.client.device.name) ||
+      'Device';
+    deviceNameLabel.textContent = devName;
+    connectButton.hidden = true;
+    disconnectButton.hidden = false;
+    disconnectButton.setAttribute('title', `Disconnect from ${devName}`);
+  } else {
+    deviceNameLabel.textContent = defaultDeviceName;
+    connectButton.hidden = false;
+    disconnectButton.hidden = true;
+    if (viewSwitcher) {
+      viewSwitcher.hidden = true;
+    }
+    if (thermalStreamToggleButton) {
+      thermalStreamToggleButton.hidden = true;
+      thermalStreamToggleButton.style.color = '';
+    }
+    setViewMode('terminal');
+  }
+});
+
 // Bind event listeners to the UI elements.
 connectButton.addEventListener('click', async () => {
   try {
-    // Open the browser Bluetooth device picker to select a device if none was previously selected, establish a
-    // connection with the selected device, and initiate communication.
-    await bluetoothTerminal.connect();
+    await thermalStreamWindow.client.connect();
   } catch (error) {
     logToTerminal(error, 'error');
   }
@@ -165,8 +256,7 @@ connectButton.addEventListener('click', async () => {
 
 disconnectButton.addEventListener('click', () => {
   try {
-    // Disconnect from the currently connected device and clean up associated resources.
-    bluetoothTerminal.disconnect();
+    thermalStreamWindow.client.disconnect();
   } catch (error) {
     logToTerminal(error, 'error');
   }
@@ -175,16 +265,20 @@ disconnectButton.addEventListener('click', () => {
 messageForm.addEventListener('submit', async (event) => {
   event.preventDefault();
 
+  const msg = messageInput.value;
   try {
-    // Send a message to the connected device.
-    await bluetoothTerminal.send(messageInput.value);
+    if (thermalStreamWindow.client.isConnected) {
+      await thermalStreamWindow.client.send(msg);
+    } else {
+      await bluetoothTerminal.send(msg);
+    }
   } catch (error) {
     logToTerminal(error, 'error');
 
     return;
   }
 
-  logToTerminal(messageInput.value, 'outgoing');
+  logToTerminal(msg, 'outgoing');
 
   messageInput.value = '';
   messageInput.focus();

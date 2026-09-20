@@ -1,7 +1,11 @@
+@use 'config';
+
 .toolbar {
   align-items: center;
   display: flex;
   flex-shrink: 0;
+  gap: 8px;
+  padding-right: 4px;
 
   .name {
     flex-grow: 1;
@@ -10,6 +14,52 @@
     text-overflow: ellipsis;
     user-select: none;
     white-space: nowrap;
+  }
+
+  .view-switcher {
+    align-items: center;
+    background: rgba(128, 128, 128, 0.08);
+    border: 1px solid config.$dividers-color;
+    border-radius: 20px;
+    display: inline-flex;
+    gap: 2px;
+    padding: 2px;
+
+    &[hidden] {
+      display: none;
+    }
+
+    .view-tab {
+      align-items: center;
+      background: transparent;
+      border: none;
+      border-radius: 16px;
+      color: config.$secondary-color;
+      cursor: pointer;
+      display: inline-flex;
+      font-family: inherit;
+      font-size: 0.76rem;
+      font-weight: 500;
+      gap: 5px;
+      padding: 4px 10px;
+      transition: all 0.18s ease;
+      user-select: none;
+
+      i.material-icons {
+        font-size: 16px;
+        vertical-align: middle;
+      }
+
+      &:hover {
+        color: config.$basic-color;
+      }
+
+      &.active {
+        background: config.$dividers-color;
+        color: config.$basic-color;
+        font-weight: 600;
+      }
+    }
   }
 
   .buttons {
@@ -24,6 +74,20 @@
     }
     button:hover {
       filter: brightness(1.15);
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .toolbar {
+    .view-switcher {
+      .view-tab {
+        padding: 4px 6px;
+
+        .tab-label {
+          display: none;
+        }
+      }
     }
   }
 }

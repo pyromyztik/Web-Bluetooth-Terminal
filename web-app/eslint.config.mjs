@@ -17,6 +17,11 @@ export default defineConfig([
       globals: {
         ...globals.browser,
         BluetoothTerminal: 'readonly',
+        ThermalCameraClient: 'readonly',
+        ThermalFilters: 'readonly',
+        ThermalScaler: 'readonly',
+        ThermalStreamWindow: 'readonly',
+        filterPeakPreservingMedian: 'readonly',
         importScripts: 'readonly',
         workbox: 'readonly',
       },

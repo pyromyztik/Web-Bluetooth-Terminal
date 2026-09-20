@@ -50,6 +50,16 @@
   <div class="app">
     <div class="toolbar">
       <div id="device-name" class="name">Web Bluetooth Terminal</div>
+      <div id="view-switcher" class="view-switcher" hidden>
+        <button id="tab-terminal" type="button" class="view-tab active" title="Terminal View">
+          <i class="material-icons">terminal</i>
+          <span class="tab-label">Terminal</span>
+        </button>
+        <button id="tab-stream" type="button" class="view-tab" title="Thermal Stream View">
+          <i class="material-icons">videocam</i>
+          <span class="tab-label">Stream</span>
+        </button>
+      </div>
       <div class="buttons">
         <button id="connect" type="button" aria-label="Connect" title="Connect">
           <i class="material-icons">bluetooth_connected</i>
@@ -60,22 +70,148 @@
         <button id="export" type="button" aria-label="Export log" title="Export log">
           <i class="material-icons">file_download</i>
         </button>
+        <button id="thermal-stream-toggle" type="button" aria-label="Thermal Camera Stream" title="Thermal Camera Stream" hidden>
+          <i class="material-icons">videocam</i>
+        </button>
         <button id="theme-toggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode">
           <i class="material-icons">dark_mode</i>
         </button>
       </div>
     </div>
-    <div id="terminal" class="terminal"></div>
-    <form id="message-form" class="message-form">
-      <input id="message-input" type="text" aria-label="Input" autocomplete="off"
-        placeholder="Type something to send...">
-      <button type="submit" aria-label="Send">
-        <i class="material-icons">send</i>
-      </button>
-    </form>
+
+    <!-- Integrated Thermal Stream Panel -->
+    <div id="thermal-stream-panel" class="thermal-stream-panel hidden">
+      <div class="stream-panel-header">
+        <div class="stream-telemetry">
+          <span class="live-pill"><span class="dot"></span>LIVE</span>
+          <span class="stream-chip" id="stream-fps">0.0 FPS</span>
+          <span class="stream-chip stat-max" id="stream-max">MAX: --</span>
+          <span class="stream-chip stat-ctr" id="stream-ctr">CTR: --</span>
+          <span class="stream-chip stat-min" id="stream-min">MIN: --</span>
+          <span class="stream-chip stat-probe" id="stream-probe">PROBE: --</span>
+        </div>
+        <div class="stream-actions">
+          <button type="button" id="stream-btn-settings-toggle" class="panel-btn" title="Stream settings" aria-label="Stream settings">
+            <i class="material-icons">tune</i>
+          </button>
+          <button type="button" id="stream-btn-close" class="panel-btn" title="Switch to Terminal" aria-label="Switch to Terminal">
+            <i class="material-icons">terminal</i>
+          </button>
+        </div>
+      </div>
+
+      <div class="stream-panel-main">
+        <div class="canvas-wrapper">
+          <canvas id="thermal-canvas" width="480" height="640" class="thermal-canvas"></canvas>
+          <div class="colorbar-wrapper">
+            <canvas id="thermal-colorbar" width="16" height="640" class="thermal-colorbar"></canvas>
+            <div class="colorbar-labels">
+              <span id="colorbar-max">--</span>
+              <span id="colorbar-mid">--</span>
+              <span id="colorbar-min">--</span>
+            </div>
+          </div>
+          <div id="stream-shutter-flash" class="shutter-flash"></div>
+        </div>
+      </div>
+
+      <!-- Sleek Bottom Action Bar -->
+      <div class="stream-bottom-bar">
+        <button type="button" id="stream-btn-capture" class="stream-action-btn capture-btn" title="Capture Picture">
+          <i class="material-icons">photo_camera</i>
+          <span>Capture</span>
+        </button>
+        <button type="button" id="stream-btn-record" class="stream-action-btn record-btn" title="Start Recording">
+          <i class="material-icons" id="stream-record-icon">fiber_manual_record</i>
+          <span id="stream-record-label">Record</span>
+        </button>
+        <button type="button" id="stream-btn-settings" class="stream-action-btn settings-btn" title="Stream Settings">
+          <i class="material-icons">tune</i>
+          <span>Settings</span>
+        </button>
+      </div>
+
+      <!-- Hidden Stream Settings Drawer & Backdrop -->
+      <div id="stream-settings-backdrop" class="stream-settings-backdrop hidden"></div>
+      <div id="stream-settings-drawer" class="stream-settings-drawer hidden">
+        <div class="drawer-header">
+          <div class="drawer-title">
+            <i class="material-icons">tune</i>
+            <span>Stream Settings</span>
+          </div>
+          <button type="button" id="stream-settings-close" class="drawer-close-btn" title="Close settings" aria-label="Close settings">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+
+        <div class="drawer-content">
+          <div class="drawer-setting-row">
+            <label for="stream-palette-select" class="setting-label">Color Palette</label>
+            <select id="stream-palette-select" class="stream-select" aria-label="Thermal color palette">
+              <option value="IRONBOW" selected>Ironbow (FLIR)</option>
+              <option value="INFERNO">Inferno</option>
+              <option value="TURBO">Turbo</option>
+              <option value="JET">Jet</option>
+              <option value="BONE">Bone (White-Hot)</option>
+              <option value="PLASMA">Plasma</option>
+            </select>
+          </div>
+
+          <div class="drawer-setting-row">
+            <label for="stream-rotation-select" class="setting-label">View Rotation</label>
+            <select id="stream-rotation-select" class="stream-select" aria-label="View rotation">
+              <option value="90" selected>90° Clockwise</option>
+              <option value="180">180°</option>
+              <option value="270">270° Clockwise</option>
+              <option value="0">0° (Standard)</option>
+            </select>
+          </div>
+
+          <div class="drawer-setting-row">
+            <label for="stream-scaling-select" class="setting-label">Scaling Algorithm</label>
+            <select id="stream-scaling-select" class="stream-select" aria-label="Thermal scaling algorithm">
+              <option value="TAAU" selected>TAAU (Temporal Anti-Aliasing)</option>
+              <option value="BICUBIC">Bicubic (Catmull-Rom)</option>
+              <option value="LANCZOS">Lanczos-3</option>
+              <option value="BILINEAR">Bilinear</option>
+              <option value="NEAREST">Nearest Neighbor</option>
+            </select>
+          </div>
+
+          <div class="drawer-setting-section">
+            <span class="setting-label">Sensor Calibration & Denoise</span>
+            <div class="drawer-toggles-grid">
+              <button type="button" class="stream-pill-btn active" id="btn-toggle-denoise" title="3x3 Peak-Preserving Median Denoise">
+                Live Denoise: ON
+              </button>
+              <button type="button" class="stream-pill-btn active" id="btn-toggle-flip" title="Vertical Flip">
+                Flip: V
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toast Notification -->
+      <div id="stream-toast" class="stream-toast hidden"></div>
+    </div>
+
+    <!-- Terminal Screen View -->
+    <div id="terminal-view" class="terminal-view">
+      <div id="terminal" class="terminal"></div>
+      <form id="message-form" class="message-form">
+        <input id="message-input" type="text" aria-label="Input" autocomplete="off"
+          placeholder="Type something to send...">
+        <button type="submit" aria-label="Send">
+          <i class="material-icons">send</i>
+        </button>
+      </form>
+    </div>
   </div>
 
   <script src="js/BluetoothTerminal.js"></script>
+  <script src="js/thermal-scaler.js"></script>
+  <script src="js/thermal-stream.js"></script>
   <script src="js/main.js"></script>
   <script src="js/register-sw.js"></script>
 
